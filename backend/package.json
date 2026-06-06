@@ -29,11 +29,11 @@
     "supertest": "Tests API endpoints by making HTTP requests.",
     "eslint": "Maintains code quality and enforces coding standards."
   },
-  "main": "server.js",
+  "main": "src/app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js"
   },
   "keywords": [],
   "author": "",
