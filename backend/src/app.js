@@ -1,7 +1,7 @@
 import express from "express";
 import helmet from "helmet";
 import cors from "cors";
-import mongoSanitize from "express-rate-limit";
+import mongoSanitize from "express-mongo-sanitize";
 import xss from "xss-clean";
 import hpp from "hpp";
 import morgan from "morgan";
@@ -138,5 +138,5 @@ process.on('uncaughtException', (err) => {
 
 startServer();
 
-module.exports = app;
+xport default app;
 

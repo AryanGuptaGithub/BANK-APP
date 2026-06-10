@@ -1,12 +1,12 @@
 import mongoose from "mongoose";
 import config from "./env";
-import logger from "../utils/"
+import logger from "../utils/logger.js";
 
 
 const connectDB = async () => {
     try{
         const conn = await mongoose.connect(config.db.uri, {
-            maxPool: 10,
+            maxPoolSize: 10,
             serverSelectionTimeoutMS: 5000,
             socketTimeoutMS: 45000,
         });
@@ -25,12 +25,12 @@ const connectDB = async () => {
             logger.info('MongoDB reconnected');
         });
 
-    } catch (err) {
+    } catch (error) {
         logger.error(`MongoDB connection failed: ${error.message}`);
         process.exit(1);
     }
 };
 
-module.exports = connectDB;
+xport default connectDB;
 
 

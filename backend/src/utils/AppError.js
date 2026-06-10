@@ -14,8 +14,8 @@ class AppError extends Error {
     _codeFromStatus(statusCode){
         const codes = {
             400: 'BAD_REQUEST',
-            401: 'UNAUTHORISZED',
-            403: 'FORBINDDEN',
+            401: 'UNAUTHORIZED',
+            403: 'FORBIDDEN',
             404: 'NOT_FOUND',
             409: 'CONFLICT',
             422: 'VALIDATION_ERROR',
@@ -26,4 +26,4 @@ class AppError extends Error {
     }
 }
 
-modules.exports = AppError;
+export default AppError;

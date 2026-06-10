@@ -48,7 +48,7 @@ const errorHandler = (err, req, res, next) => {
         logger.error('UNEXPECTED ERROR', {
             message: error.message,
             stack: error.stack,
-            url: req.orignalUrl,
+            url: req.originalUrl,
             method: req.method,
             userId: req.user?.id,
         });
@@ -56,20 +56,20 @@ const errorHandler = (err, req, res, next) => {
         logger.warn('Operational error', {
             message: error.message,
             code: error.code,
-            url: req.orignalUrl,
+            url: req.originalUrl,
             method: req.method,
         });
     }
 
 
     const statusCode = error.statusCode || 500;
-    const message = error.isOperational ? error.message : config.app.isPod ? "Something went wrong. Please Try again later." : error.message;
+    const message = error.isOperational ? error.message : config.app.isProd ? "Something went wrong. Please Try again later." : error.message;
 
     return sendError(res, {
         message,
         code: error.code || 'INTERNAL_ERROR',
         statusCode,
-        details: !config.app.isPod && !error.isOperational ? error.stack : undefined,
+        details: !config.app.isProd && !error.isOperational ? error.stack : undefined,
     });
 
 };

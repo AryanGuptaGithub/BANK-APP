@@ -21,12 +21,12 @@ const logger = winston.createLogger({
     transports: [
         new winston.transports.Console(),
     ],
-    exisOnError: false,
+    exitOnError: false,
 });
 
 
 if(config.app.isProd){
-    logger.add(new winston.transport.File({
+    logger.add(new winston.transports.File({
         filename: 'logs/error.log',
         level: "error",
         maxsize: 10 * 1024 * 1024,
@@ -34,6 +34,6 @@ if(config.app.isProd){
     }));
 }
 
-module.exports = logger;
+export default logger;
 
 

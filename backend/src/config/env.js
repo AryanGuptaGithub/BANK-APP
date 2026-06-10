@@ -24,7 +24,7 @@ if(process.env.ENCRYPTION_KEY.length !== 32){
 }
 
 
-modules.exports = {
+export {
     app:{
         env: process.env.NODE_ENV || 'developement',
         port: parseInt(process.env.PORT, 10) || 5000,
@@ -36,13 +36,13 @@ modules.exports = {
         uri: process.env.MONGO_URI,
     },
     redis:{
-        uri: process.env.REDIS_URL,
+        url: config.redis.url,
     },
     jwt:{
         accessSecret: process.env.JWT_ACCESS_SECRET,
         refreshSecret: process.env.JWT_REFRESH_SECRET,
-        accessExpiresIn: process.env.JWT_ACCESS_SECRET_IN || '15m',
-        refreshExpriresIn: process.env.JWT_REFRESH_SECRET_IN || '7d',
+        accessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
+        refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
     },
     bcrypt:{
         saltRounds: parseInt(process.env.BCRYPT_SALT_ROUNDS, 10) || 12,

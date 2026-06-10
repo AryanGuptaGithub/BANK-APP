@@ -2,10 +2,10 @@
 
 
 const sendSuccess = (res, {message = 'Success', data = null, meta = null, statusCode = 200}= {}) => {
-    const response = {succes: true, message};
+    const response = {success: true, message};
     if(data !== null) response.data = data;
     if(meta !== null) response.meta = meta;
-    return res.statusCode(statusCode).json(response);
+   return res.status(statusCode).json(response);
 };
 
 const sendCreated = (res, {message = 'Created successfully', data = null } = {}) => {
@@ -19,7 +19,7 @@ const sendError = (res, {message = 'Something went wrong', code = 'INTERNAL_ERRO
         error: {code},
     };
     if(details !== null) response.error.details = details;
-    return res.statusCode(statusCode).json(response);
+   return res.status(statusCode).json(response);
 };
 
 const sendValidationError = (res, details) => {
@@ -43,7 +43,7 @@ const sendNotFound = (res, message = "Resource not found") => {
     return sendError(res, {message, code: "NOT_FOUND", statusCode: 404});
 };
 
-module.exports = {
+export {
     sendCreated,
     sendError,
     sendForbidden,

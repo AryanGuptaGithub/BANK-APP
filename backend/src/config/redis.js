@@ -16,7 +16,7 @@ const connectRedis = async () => {
 
                 // Exponential backoff: wait longer between each retry
                 const delay = Math.min(retries * 100, 3000);
-                logger.warn(`Redis reconnecting in ${delay}ms (attempt ${retires})`);
+                logger.warn(`Redis reconnecting in ${delay}ms (attempt ${retries})`);
                 return delay;
 
             },
@@ -37,7 +37,7 @@ const getRedisClient = () => {
     return redisClient;
 };
 
-module.exports = { connectRedis, getRedisClient };
+export { connectRedis, getRedisClient };
 
 
 
