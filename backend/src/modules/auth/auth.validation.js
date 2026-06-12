@@ -27,7 +27,7 @@ export const registerSchema = Joi.object({
     lastName: Joi.string().min(2).max(50).trim().required().messages({
         "string.min": "First name must be at least 2 characters",
         "any.required": "First name is required",
-    });
+    }),
     email: emailField,
     phone: phoneField,
     password: passwordField,
@@ -110,3 +110,6 @@ export const validate = (schema) => {
         next();
     };
 };
+
+
+
