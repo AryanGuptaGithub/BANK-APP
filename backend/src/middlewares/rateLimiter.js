@@ -6,7 +6,7 @@ import config from "../config/env";
 
 
 const createLimiter = ({ windowMs, max, message, keyPrefix }) => {
-    return rateLimter({
+    return rateLimit({
         windowMs,
         max,
         standardHeaders: true,
@@ -24,7 +24,7 @@ const globalLimiter = createLimiter({
    windowMs: config.rateLimit.windowMs,
     max: config.rateLimit.max,
     message: "Too many requests, please try again later.",
-    keyprefix: 'global',
+    keyPrefix: 'global',
 });
 
 const authLimiter = createLimiter({

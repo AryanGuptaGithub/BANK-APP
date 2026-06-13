@@ -24,7 +24,7 @@ if(process.env.ENCRYPTION_KEY.length !== 32){
 }
 
 
-export {
+const config = {
     app:{
         env: process.env.NODE_ENV || 'developement',
         port: parseInt(process.env.PORT, 10) || 5000,
@@ -36,7 +36,7 @@ export {
         uri: process.env.MONGO_URI,
     },
     redis:{
-        url: config.redis.url,
+        url: process.env.REDIS_URL,
     },
     jwt:{
         accessSecret: process.env.JWT_ACCESS_SECRET,
@@ -55,7 +55,7 @@ export {
         from: process.env.EMAIL_FROM || 'noreply@bankapi.com',
     },
     rateLimit:{
-        windowMs: parseInt(process.env.RATE_LIMIT_WINDOWS_MS, 10) || 60000,
+        windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 60000,
         max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS, 10) || 100,
     },
     mfa: {
@@ -66,3 +66,5 @@ export {
     }
 }
 
+
+export default config;

@@ -3,31 +3,18 @@ import crypto from "crypto";
 import speakeasy from "speakeasy";
 import qrcode from "qrcode";
 import config from "../../config/env.js";
-import {getRedis} from "./auth.model.js";
-import User from "../../utils/AppError.js";
+import { getRedisClient } from "../../config/redis.js";
+import User from "./auth.model.js";
 import logger from "../../utils/logger.js";
 import { refreshTokenSchema } from "./auth.validation.js";
 import AppError from "../../utils/AppError.js";
-import { access } from "fs";
+
 
 // ------------------ Token Helpers --------------------
 
 
-const generateAccessToken = (userId, role) => {
+const generateAccessToken = (userId) => { 
     return jwt.sign( 
-        {id: userId, role},
-        config.jwt.accessSecret,
-        {
-            expiresIn: config.jwt.accessExpiresIn,
-            issuer: config.app.name,
-        }
-    );
-}
-
-
-
-const generateAccessToken = (userId) => {
-    return jwt.sign(
         {id: userid},
         config.jwt.accessSecret,
         {
@@ -35,8 +22,7 @@ const generateAccessToken = (userId) => {
             issuer: config.app.name,
         }
     );
-};
-
+}
 
 
 const generateRefreshToken = (userId) => {
@@ -57,10 +43,6 @@ const hashToken = (token) => {
 
 
 
-const storeRefreshToken = async (userId, refreshToken) => {
-    const redis = getRedisClient();
-
-}
 
 
 const storeRefreshToken = async (userId, refreshToken) => {
@@ -69,12 +51,12 @@ const storeRefreshToken = async (userId, refreshToken) => {
     const ttlSeconds = 7 * 24 * 60 * 60; // 7 days in seconds
     
     // Store in redis for the fash lookup
-    await redis.setEx(`refresh: ${userId}`, ttlSeconds, hash );
+    await redis.setEx(`refresh:${userId}`, ttlSeconds, hash );
     // Also store hash on user document for cross-reference
-    await User.FindByAndUpdates(userId, {refreshTokenHash: hash});
+    await User.FindByAndUpdate(userId, {refreshTokenHash: hash});
 };
 
-export const register = async ({firstname, lastName, email, phone, password}) => {
+export const register = async ({firstName, lastName, email, phone, password}) => {
     // Check if email already exists - give a generic message to avoid user enumeration
     const existingUser = await User.findOne({ $or: [{email}, {phone}]});
     if(existingUser){
@@ -82,7 +64,7 @@ export const register = async ({firstname, lastName, email, phone, password}) =>
     }
 
     const verficationToken = crypto.randomBytes(32).toString("hex");
-    const verficationHash = hashToken(verificationToken);
+    const verficationHash = hashToken(verficationToken);
 
     const user = await User.create({
         firstName,
@@ -90,15 +72,15 @@ export const register = async ({firstname, lastName, email, phone, password}) =>
         email,
         phone,
         password, // pre-save hook hashes this automatically
-        emailverficationToken: verificationHash,
-        emailverificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h
+        emailVerificationToken: verificationHash,
+        emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h
     });
 
     logger.info("New user registered", {userId: user._id, email: user.email});
 
     return {
         userId: user._id,
-        email: user._email,
+        email: user.email,
         message: "Registration successful. Please verify your email.",
     };
 };
@@ -109,7 +91,7 @@ export const login = async ({email, password, mfaToken, ip}) => {
 
     // Explicitly select password (select: false by default) and lockout fields 
     const user = await User.findOne({ email }).select(
-        "+password +failedLoginAttempts +lockUntil +mfaSecret +refreshTokenHash"
+        "+password +failedLoginAttempts +lockUntill +mfaSecret +refreshTokenHash"
     );
 
     // Check 1: Does user exist?
@@ -158,19 +140,25 @@ export const login = async ({email, password, mfaToken, ip}) => {
             // Signal to frontend that MFA is required - don't issue token yet 
             throw new AppError("MFA token required", 202, "MFA_REQUIRED");
         }
-    }
-
-    const isMfaValid = speakeasy.totp.verify({
+        
+        const isMfaValid = speakeasy.totp.verify({
         secret: user.mfaSecret,
         encoding: "base32",
         token: mfaToken,
         window: 1, // Allow 1 step (30s) clock drift
-    });
+         });
 
+         if(!isMfaValid){
+            throw new AppError("Invalid MFA token", 401, "INVALID_MFA_TOKEN");
+        }
 
-    if(!isMfaValid){
-        throw new AppError("Invalid MFA token", 401, "INVALID_MFA_TOKEN");
+        
     }
+
+    
+    
+
+   
 
     // -- All checks passed -- Issue tokens
     await user.resetFailedAttempts();
@@ -208,7 +196,7 @@ export const login = async ({email, password, mfaToken, ip}) => {
 
 
 
-export const refreshAccessToken = async (refreshAccessToken) => {
+export const refreshAccessToken = async (refreshToken) => {
     let decoded;
     try{
         decoded = jwt.verify(refreshToken, config.jwt.refreshSecret);
@@ -217,19 +205,19 @@ export const refreshAccessToken = async (refreshAccessToken) => {
     }
 
     const redis = getRedisClient();
-    const storedHash = await redis.get(`refresh: ${decoded.id}`);
+    const storedHash = await redis.get(`refresh:${decoded.id}`);
 
     //Compare hash of incomming token with stored
-    const incomming = hashToken(refreshToken);
+    const incomingHash = hashToken(refreshToken);
     // Token not in Redis - either logged out or reuse attack 
-    if(!storeHash || storeHash !== incommingHash){
+    if(!storedHash || storedHash !== incomingHash){
         logger.warn("Refresh token reuse attempt detected", {userId: decoded.id });
         throw new AppError("User not found or deactivated", 401, "INVALID_REFRESH_TOKEN");
     }
 
     const user = await User.findById(decoded.id);
     if(!user || !user.isActive){
-        throw new AopError("User not found or deactivated", 401, "INVALID_REFRESH_TOKEN");
+        throw new AppError("User not found or deactivated", 401, "INVALID_REFRESH_TOKEN");
     }
 
     // -- TOKEN Rotation: invalidate old token, issue new pair ------
@@ -237,7 +225,7 @@ export const refreshAccessToken = async (refreshAccessToken) => {
     // If an attacker steals and uses a refresh token, the real user's next
     // request will fail (token already rotated), alerting you to the breach.
 
-    const newAccessToken = generatedAccessToken(user._id, user.role);
+    const newAccessToken = generateAccessToken(user._id, user.role);
     const newRefreshToken = generateRefreshToken(user._id);
 
     await storeRefreshToken(user._id, newRefreshToken);
@@ -251,10 +239,10 @@ export const logout = async (userId) => {
     const redis = getRedisClient();
 
     // Delete refresh token from Redis -- immediately invalidates it 
-    await redis.del(`refresh: ${userId}`);
+    await redis.del(`refresh:${userId}`);
 
     // Clear hash from user document
-    await User.FindByAndUpdates(userId, {refreshTokenHash: null});
+    await User.FindByAndUpdate(userId, {refreshTokenHash: null});
 
     logger.info("User logged out", {userId});
 };
@@ -265,7 +253,7 @@ export const logout = async (userId) => {
 
 export const setupMfa = async (userId) => {
     
-    const user = await User.findOne(userId);
+    const user = await User.findById(userId);
     
     if(!user) throw new AppError("User not found", 404);
 
@@ -280,14 +268,14 @@ export const setupMfa = async (userId) => {
     });
 
     // Temporarily store secret (not enabled until user verifies it)
-    await User.FindByAndUpdates(userId, {mfaSecret: secret.base32});
+    await User.FindByAndUpdate(userId, {mfaSecret: secret.base32});
 
     // Generate QR code the user scans with Google Authenticator
-    const qrCodeDataUrl = await qrcode.toDateURL(secret.otpauth_url);
+    const qrCodeDataUrl = await qrcode.toDataURL(secret.otpauth_url);
 
 
     return {
-        qrCode: qrCodeDateUrl,
+        qrCode: qrCodeDataUrl,
         manualKey: secret.base32,
     };
 };
@@ -309,7 +297,7 @@ export const verifyMfaSetup = async (userId, token) => {
         window: 1,
     });
 
-    if(!isvalid){
+    if(!isValid){
         throw new AppError("Invalid MFA token, Please scan the QR code again.", 400, "INVALID_MFA_TOKEN");
     }
 

@@ -31,7 +31,7 @@ import {sendSuccess, sendCreated} from "../../utils/apiResponse.js"
         res.cookie("refreshToken", result.refreshToken, {
             httpOnly: true, // Not Accessible via JavaScript
             secure: process.env.NODE_ENV === "production", // HTTPS only in prod
-            sameSize: "Strict", // No Cross-site request
+            sameSite: "strict", // No Cross-site request
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
         });
 
@@ -66,6 +66,8 @@ import {sendSuccess, sendCreated} from "../../utils/apiResponse.js"
             sameSize: "strict",
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
+
+        return sendSuccess(res, { message: "Token refreshed", data: { accessToken: result.accessToken }});
     });
 
     // POST /api/v1/auth/logout

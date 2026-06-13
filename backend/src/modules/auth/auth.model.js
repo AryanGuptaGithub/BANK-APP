@@ -41,7 +41,7 @@ const userSchema = new mongoose.Schema(
         },
         role:{
             type: String,
-            enum: ["customr", "admin", "auditor"],
+            enum: ["customer", "admin", "auditor"],
             default: "customer",
         },
         isActive:{
@@ -134,7 +134,7 @@ userSchema.methods.comparePassword = async function (candidatePassword){
 };
 
 const MAX_LOGIN_ATTEMPTS = 5;
-const LOCK_DURATION_MS = 30 * 60 * 100;
+const LOCK_DURATION_MS = 30 * 60 * 1000;
 
 userSchema.methods.incrementFailedAttempts = async function(){
     this.failedLoginAttempts += 1;
@@ -147,7 +147,7 @@ userSchema.methods.incrementFailedAttempts = async function(){
 userSchema.methods.resetFailedAttempts = async function(){
     this.failedLoginAttempts = 0;
     this.lockUntill = null;
-    return this.save;
+    return this.save();
 }
 
 userSchema.methods.wasPasswordChangedAfter = function(jwtIssueAt){

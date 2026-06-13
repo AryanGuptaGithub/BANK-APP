@@ -1,15 +1,15 @@
 import jwt from "jsonwebtoken";
 import config from "../config/env.js";
-import User from "../modules/auth/auth.module.js";
+import User from "../modules/auth/auth.model.js";
 import AppError from "../utils/AppError.js";
-import catchAsync from "../utils/catchAsync";
+import catchAsync from "../utils/catchAsync.js";
 
 
 
 export const authenticate = catchAsync(async (req, res, next) => {
     
     const authHeader = req.headers.authorization;
-    if(!authHeader || !authHeaders.startsWith("Bearer ")){
+    if(!authHeader || !authHeader.startsWith("Bearer ")){
         throw new AppError("Access token required", 401, "MISSING_TOKEN");
     }
 
@@ -20,9 +20,9 @@ export const authenticate = catchAsync(async (req, res, next) => {
         decoded = jwt.verify(token, config.jwt.accessSecret);
     }catch(err){
         if(err.name === "TokenExpiredError"){
-            throw new AppError("Access token has expired", 401, "Token_EXPIRED");
+            throw new AppError("Access token has expired", 401, "TOKEN_EXPIRED");
         }
-        throw new AppError("Invalid access token", 401, "Invalid_TOKEN");
+        throw new AppError("Invalid access token", 401, "INVALID_TOKEN");
     }
 
     // 3. Check user still exists
@@ -37,7 +37,7 @@ export const authenticate = catchAsync(async (req, res, next) => {
         throw new AppError(
             "Password was recently changed. Please log in again.",
             401,
-            "Password_CHANGED"
+            "PASSWORD_CHANGED"
         );
     }
 
@@ -48,7 +48,7 @@ export const authenticate = catchAsync(async (req, res, next) => {
         email: user.email,
         role: user.role,
         isMfaEnabled: user.isMfaEnabled,
-        kyuStatus: user.kycStatus,
+        kycStatus: user.kycStatus,
     };
 
     next();

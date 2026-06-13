@@ -31,6 +31,6 @@ const connectDB = async () => {
     }
 };
 
-xport default connectDB;
+export default connectDB;
 
 

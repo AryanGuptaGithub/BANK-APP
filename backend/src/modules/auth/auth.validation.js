@@ -20,7 +20,7 @@ const phoneField = Joi.string().pattern(/^\+?[\d\s\-]{10,15}$/).required().messa
 });
 
 export const registerSchema = Joi.object({
-    firstName: Joi.string().min(2).max(50).trim().required.message({
+    firstName: Joi.string().min(2).max(50).trim().required().message({
         "string.min": "First name must be at least 2 characters",
         "any.required": "First name is required",
     }),
@@ -31,23 +31,13 @@ export const registerSchema = Joi.object({
     email: emailField,
     phone: phoneField,
     password: passwordField,
-    confimPassword: Joi.string().valid(Joi.ref("password")).required().messages({
+    confirmPassword: Joi.string().valid(Joi.ref("password")).required().messages({
         "any.only": "Passwords do not match",
         "any.required": "Please confirm your password",
     }),
 });
 
-export const loginSchema = Joi.object({
-    email: emailField,
-    password: Joi.string().required().messages({
-        "any.required": "Password is required",
-    }),
 
-    mfaToken: Joi.string().length(6).pattern(/^\d+$/).optional().messages({
-        "string.length": "MFA token must be 6 digits",
-        "string.pattern.base": "MFA token must be numeric",
-    }),
-});
 
 export const referenceTokenSchema = Joi.object({refreshToken: Joi.string().required().messages({
     "string.length":"MFA token must be 6 digits",
