@@ -76,11 +76,11 @@ const errorHandler = (err, req, res, next) => {
             message,
             code: error.code || "INTERNAL_ERROR",
             statusCode,
-            details: !Config.app.isProd && !error.isOperational ? error.stack : undefined,
+            details: !config.app.isProd && !error.isOperational ? error.stack : undefined,
         });
 
 
-        
+
 }
 
 export default errorHandler; 

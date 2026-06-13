@@ -64,10 +64,7 @@ const userSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
-        lockUntill:{
-            type: Date,
-            default: null,
-        },
+        lockUntil: { type: Date, default: null },
         passwordResetToken:{
             type: String,
             select: false,
@@ -113,7 +110,7 @@ userSchema.virtual("fullname").get(function(){
 });
 
 userSchema.virtual("isLocked").get(function(){
-    return !!(this.lockUntill && this.lockUntill > Date.now());
+    return !!(this.lockUntil && this.lockUntil > Date.now());
 });
 
 
@@ -139,14 +136,14 @@ const LOCK_DURATION_MS = 30 * 60 * 1000;
 userSchema.methods.incrementFailedAttempts = async function(){
     this.failedLoginAttempts += 1;
     if(this.failedLoginAttempts >= MAX_LOGIN_ATTEMPTS){
-        this.lockUntill = new Date(Date.now() + LOCK_DURATION_MS);
+        this.lockUntil = new Date(Date.now() + LOCK_DURATION_MS);
     }
     return this.save();
 }
 
 userSchema.methods.resetFailedAttempts = async function(){
     this.failedLoginAttempts = 0;
-    this.lockUntill = null;
+    this.lockUntil = null;
     return this.save();
 }
 

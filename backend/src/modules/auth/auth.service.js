@@ -53,7 +53,7 @@ const storeRefreshToken = async (userId, refreshToken) => {
     // Store in redis for the fash lookup
     await redis.setEx(`refresh:${userId}`, ttlSeconds, hash );
     // Also store hash on user document for cross-reference
-    await User.findByAndUpdate(userId, {refreshTokenHash: hash});
+    await User.findByIdAndUpdate(userId, {refreshTokenHash: hash});
 };
 
 export const register = async ({firstName, lastName, email, phone, password}) => {
@@ -63,8 +63,8 @@ export const register = async ({firstName, lastName, email, phone, password}) =>
         throw new AppError("An Account with these details already exists", 409, "ACCOUNT_EXISTS");
     }
 
-    const verficationToken = crypto.randomBytes(32).toString("hex");
-    const verficationHash = hashToken(verficationToken);
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const verificationHash = hashToken(verificationToken);
 
     const user = await User.create({
         firstName,
@@ -242,7 +242,7 @@ export const logout = async (userId) => {
     await redis.del(`refresh:${userId}`);
 
     // Clear hash from user document
-    await User.findByAndUpdate(userId, {refreshTokenHash: null});
+    await User.findByIdAndUpdate(userId, {refreshTokenHash: null});
 
     logger.info("User logged out", {userId});
 };
@@ -268,7 +268,7 @@ export const setupMfa = async (userId) => {
     });
 
     // Temporarily store secret (not enabled until user verifies it)
-    await User.findByAndUpdate(userId, {mfaSecret: secret.base32});
+    await User.findByIdAndUpdate(userId, {mfaSecret: secret.base32});
 
     // Generate QR code the user scans with Google Authenticator
     const qrCodeDataUrl = await qrcode.toDataURL(secret.otpauth_url);
