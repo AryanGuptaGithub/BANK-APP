@@ -58,10 +58,31 @@ const errorHandler = (err, req, res, next) => {
         });
     }else{
         logger.warn('Operational Error',{
-            
-        })
+            message: error.message,
+            code: error.code,
+            url: req.originalUrl,
+            method: req.method,
+        });
     }
 
+
+
+    // In production, never send stack traces or internal error details to client 
+
+        const statusCode = error.statusCode || 500;
+        const message = error.isOperational ? error.message : config.app.isProd ? 'Something went wrong. Please try again later' : error.message;
+
+        return sendError(res, {
+            message,
+            code: error.code || "INTERNAL_ERROR",
+            statusCode,
+            details: !Config.app.isProd && !error.isOperational ? error.stack : undefined,
+        });
+
+
+        
 }
+
+export default errorHandler; 
 
 

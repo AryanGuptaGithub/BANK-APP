@@ -14,7 +14,7 @@ import errorHandler from './middlewares/errorHandler.js';
 import {globalLimiter} from "./middlewares/rateLimiter.js";
 import {sendSuccess, sendNotFound } from './utils/apiResponse.js';
 
-import authRoute from './modules/auth/auth.routes.js'
+import authRoutes from './modules/auth/auth.routes.js'
 import accountsRoute  from './modules/accounts/accounts.routes.js'
 import transactionsRoute  from './modules/transactions/transactions.routes.js'
 
@@ -26,6 +26,7 @@ const app = express();
 
 // Set security HTTP headers ( XSS protection, no-sniff, HSTS, etc.)
 app.use(helmet());
+
 
 // CORS - Only Allow requests from trusted origins
 app.use(cors({
@@ -90,7 +91,8 @@ app.get("/health",(req, res) => {
 
 // ---- API Routes ---------------------------------------------------
 
-// app.use("/api/v1/auth", authRoute);
+app.use("/api/v1/auth", authRoutes);
+
 // app.use("/api/v1/account", accountsRoute);
 // app.use("/api/v1/transactions", transactionsRoute);
 
@@ -104,7 +106,6 @@ app.all('*', (req, res) => {
 // ------ Global Error Handler (must be last) ---------------------------
 
 app.use(errorHandler);
-
 
 // ----- Start Server --------------------------------------------
 const startServer = async () => {
@@ -138,5 +139,5 @@ process.on('uncaughtException', (err) => {
 
 startServer();
 
-xport default app;
+export default app;
 
