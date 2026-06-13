@@ -6,16 +6,16 @@ import config from "../../config/env.js";
 import { getRedisClient } from "../../config/redis.js";
 import User from "./auth.model.js";
 import logger from "../../utils/logger.js";
-import { refreshTokenSchema } from "./auth.validation.js";
+
 import AppError from "../../utils/AppError.js";
 
 
 // ------------------ Token Helpers --------------------
 
 
-const generateAccessToken = (userId) => { 
+const generateAccessToken = (userId, role) => { 
     return jwt.sign( 
-        {id: userid},
+        {id: userId, role},
         config.jwt.accessSecret,
         {
             expiresIn: config.jwt.accessExpiresIn,
@@ -53,7 +53,7 @@ const storeRefreshToken = async (userId, refreshToken) => {
     // Store in redis for the fash lookup
     await redis.setEx(`refresh:${userId}`, ttlSeconds, hash );
     // Also store hash on user document for cross-reference
-    await User.FindByAndUpdate(userId, {refreshTokenHash: hash});
+    await User.findByAndUpdate(userId, {refreshTokenHash: hash});
 };
 
 export const register = async ({firstName, lastName, email, phone, password}) => {
@@ -107,7 +107,7 @@ export const login = async ({email, password, mfaToken, ip}) => {
 
     // Check 3: Is Account locked?
     if(user.isLocked){
-        const minutesLeft = Math.ceil((user.lockUntil - Date.now()) / 1000 / 60);
+        const minutesLeft = Math.ceil((user.lockUntill - Date.now()) / 1000 / 60);
         throw new AppError(
             `Account temporarily locked. Try again in ${minutesLeft} minute(s).`,
             423,
@@ -242,7 +242,7 @@ export const logout = async (userId) => {
     await redis.del(`refresh:${userId}`);
 
     // Clear hash from user document
-    await User.FindByAndUpdate(userId, {refreshTokenHash: null});
+    await User.findByAndUpdate(userId, {refreshTokenHash: null});
 
     logger.info("User logged out", {userId});
 };
@@ -268,7 +268,7 @@ export const setupMfa = async (userId) => {
     });
 
     // Temporarily store secret (not enabled until user verifies it)
-    await User.FindByAndUpdate(userId, {mfaSecret: secret.base32});
+    await User.findByAndUpdate(userId, {mfaSecret: secret.base32});
 
     // Generate QR code the user scans with Google Authenticator
     const qrCodeDataUrl = await qrcode.toDataURL(secret.otpauth_url);
