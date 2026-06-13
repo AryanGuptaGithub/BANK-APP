@@ -91,7 +91,7 @@ export const login = async ({email, password, mfaToken, ip}) => {
 
     // Explicitly select password (select: false by default) and lockout fields 
     const user = await User.findOne({ email }).select(
-        "+password +failedLoginAttempts +lockUntill +mfaSecret +refreshTokenHash"
+        "+password +failedLoginAttempts +lockUntil +mfaSecret +refreshTokenHash"
     );
 
     // Check 1: Does user exist?
@@ -107,7 +107,7 @@ export const login = async ({email, password, mfaToken, ip}) => {
 
     // Check 3: Is Account locked?
     if(user.isLocked){
-        const minutesLeft = Math.ceil((user.lockUntill - Date.now()) / 1000 / 60);
+        const minutesLeft = Math.ceil((user.lockUntil - Date.now()) / 1000 / 60);
         throw new AppError(
             `Account temporarily locked. Try again in ${minutesLeft} minute(s).`,
             423,
