@@ -1,10 +1,12 @@
+// src/config/redis.js
 import {createClient} from "redis";
-import config from "./env";
-import logger from "../utils/logger";
+import config from "./env.js";
+import logger from "../utils/logger.js";
 
 let redisClient;
 
 const connectRedis = async () => {
+    logger.info(`REDIS_URL = ${config.redis.url}`);
     redisClient = createClient({ 
         url: config.redis.url,
         socket: {
@@ -30,12 +32,7 @@ const connectRedis = async () => {
      await redisClient.connect();
 };
 
-const getRedisClient = () => {
-    if(!redisClient){
-        throw new Error('Redis client not initialized. call connectRedis() first.');
-    }
-    return redisClient;
-};
+const getRedisClient = () => redisClient;
 
 export { connectRedis, getRedisClient };
 

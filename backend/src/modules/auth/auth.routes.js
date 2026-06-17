@@ -1,23 +1,30 @@
 import { Router } from "express";
 import * as authController from "./auth.controller.js";
-import { validate, registerSchema, loginSchema, refreshTokenSchema, mfaVerifySchema } from "./auth.validation.js";
+import { validate, registerSchema, loginSchema, refreshTokenSchema, mfaVerifySchema, verifyEmailSchema, resendOtpSchema } from "./auth.validation.js";
 import { authenticate } from "../../middlewares/authenticate.js";
-import { authLimiter } from "../../middlewares/rateLimiter.js";
+import { createAuthLimiter } from "../../middlewares/rateLimiter.js";
 
+// ✅ Factory function — called inside startServer(), after connectRedis()
+const createAuthRouter = () => {
+    const router = Router();
 
-const router = Router();
+    router.use(createAuthLimiter()); // ✅ Redis is connected by the time this runs
 
-// Apply strict rate limiting to All auth routes
-router.use(authLimiter);
+    // Public routes
+    router.post("/register", validate(registerSchema), authController.register);
+    router.post("/login", validate(loginSchema), authController.login);
+    router.post("/refresh", authController.refreshToken);
 
-// --- Public Routes (no token required) ----------
-router.post("/register", validate(registerSchema), authController.register);
-router.post("/login", validate(loginSchema), authController.login);
-router.post("/refresh", authController.refreshToken);
+    // Protected routes
+    router.post("/logout", authenticate, authController.logout);
+    router.post("/mfa/setup", authenticate, authController.setupMfa);
+    router.post("/mfa/verify", authenticate, validate(mfaVerifySchema), authController.verifyMfa);
 
-// ---- Protected Routes (token required) -----------------------
-router.post("/logout", authenticate, authController.logout);
-router.post("/mfa/setup", authenticate, authController.setupMfa);
-router.post("/mfa/verify", authenticate, validate(mfaVerifySchema), authController.verifyMfa);
+    // Verify-email otp
+router.post("/verify-email", validate(verifyEmailSchema), authController.verifyEmail);
+router.post("/resend-otp", validate(resendOtpSchema), authController.resendOtp);
 
-export default router;
+    return router;
+};
+
+export default createAuthRouter;

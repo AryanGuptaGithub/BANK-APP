@@ -1,3 +1,4 @@
+// errorHandler.js
 import config from "../config/env.js";
 import logger from "../utils/logger.js";
 import {sendError} from "../utils/apiResponse.js";
@@ -41,7 +42,7 @@ const handleJWTErrors = (err) => {
 
 
 const errorHandler = (err, req, res, next) => {
-    let error = {...err, message: err.message};
+    let error = err;
     
     // Convert known error types to AppError
     error = handleMongoErrors(error);

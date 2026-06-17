@@ -72,6 +72,23 @@ export const mfaVerifySchema = Joi.object({
 });
 
 
+const otpField = Joi.string().length(6).pattern(/^\d+$/).required().messages({
+    "string.length": "OTP must be 6 digits",
+    "string.pattern.base": "OTP must contain only digits",
+    "any.required": "OTP is required",
+});
+
+export const verifyEmailSchema = Joi.object({
+    email: emailField,
+    otp: otpField,
+});
+
+export const resendOtpSchema = Joi.object({
+    email: emailField,
+});
+
+
+
 export const validate = (schema) => {
     return (req, res, next) => {
         const { error, value } = schema.validate(req.body, {

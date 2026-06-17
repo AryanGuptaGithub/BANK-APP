@@ -102,6 +102,16 @@ import {sendSuccess, sendCreated} from "../../utils/apiResponse.js"
     });
 
 
+// POST /api/v1/auth/verify-email
+export const verifyEmail = catchAsync(async (req, res) => {
+    const result = await authService.verifyEmail(req.body);
+    return sendSuccess(res, { message: result.message });
+});
 
+// POST /api/v1/auth/resend-otp
+export const resendOtp = catchAsync(async (req, res) => {
+    const result = await authService.resendVerificationOtp(req.body);
+    return sendSuccess(res, { message: result.message });
+});
 
 

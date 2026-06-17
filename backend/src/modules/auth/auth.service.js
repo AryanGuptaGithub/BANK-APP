@@ -8,6 +8,7 @@ import User from "./auth.model.js";
 import logger from "../../utils/logger.js";
 
 import AppError from "../../utils/AppError.js";
+import { sendVerificationOtpEmail } from "../../utils/mailer.js";
 
 
 // ------------------ Token Helpers --------------------
@@ -37,11 +38,21 @@ const generateRefreshToken = (userId) => {
 };
 
 
+
+
 const hashToken = (token) => {
     return crypto.createHash("sha256").update(token).digest("hex");
 };
 
 
+const OTP_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const OTP_RESEND_COOLDOWN_MS = 60 * 1000; // 60 seconds
+
+
+const generateOtp = () => {
+    // crypto.randomInt for cryptographic randomness, padded so leading zeros stay valid 6-digit codes
+    return crypto.randomInt(0, 1000000).toString().padStart(6, "0");
+};
 
 
 
@@ -57,14 +68,13 @@ const storeRefreshToken = async (userId, refreshToken) => {
 };
 
 export const register = async ({firstName, lastName, email, phone, password}) => {
-    // Check if email already exists - give a generic message to avoid user enumeration
     const existingUser = await User.findOne({ $or: [{email}, {phone}]});
     if(existingUser){
         throw new AppError("An Account with these details already exists", 409, "ACCOUNT_EXISTS");
     }
 
-    const verificationToken = crypto.randomBytes(32).toString("hex");
-    const verificationHash = hashToken(verificationToken);
+    const otp = generateOtp();
+    const otpHash = hashToken(otp);
 
     const user = await User.create({
         firstName,
@@ -72,18 +82,27 @@ export const register = async ({firstName, lastName, email, phone, password}) =>
         email,
         phone,
         password, // pre-save hook hashes this automatically
-        emailVerificationToken: verificationHash,
-        emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h
+        emailVerificationToken: otpHash,
+        emailVerificationExpires: new Date(Date.now() + OTP_TTL_MS),
     });
 
     logger.info("New user registered", {userId: user._id, email: user.email});
 
+    try {
+        await sendVerificationOtpEmail(user.email, otp);
+    } catch (err) {
+        // Don't fail registration just because the email send failed — the user can hit /resend-otp
+        logger.error("Failed to send verification OTP email", { userId: user._id, error: err.message });
+    }
+
     return {
         userId: user._id,
         email: user.email,
-        message: "Registration successful. Please verify your email.",
+        message: "Registration successful. Please check your email for a verification code.",
     };
 };
+
+
 
 //  ----------- Login ----------------------------
 
@@ -311,4 +330,83 @@ export const verifyMfaSetup = async (userId, token) => {
 
 
 
+// ------------------- Verify Email ----------------------------------
 
+export const verifyEmail = async ({ email, otp }) => {
+    if (!email || !otp) {
+        throw new AppError("Email and OTP are required", 400, "VALIDATION_ERROR");
+    }
+
+    const user = await User.findOne({ email }).select(
+        "+emailVerificationToken +emailVerificationExpires"
+    );
+
+    if (!user) {
+        throw new AppError("Invalid email or OTP", 400, "INVALID_OTP");
+    }
+
+    if (user.isEmailVerified) {
+        return { message: "Email already verified" };
+    }
+
+    if (!user.emailVerificationToken || !user.emailVerificationExpires) {
+        throw new AppError("No verification code found. Please request a new one.", 400, "OTP_NOT_FOUND");
+    }
+
+    if (user.emailVerificationExpires < new Date()) {
+        throw new AppError("Verification code has expired. Please request a new one.", 400, "OTP_EXPIRED");
+    }
+
+    const incomingHash = hashToken(String(otp).trim());
+    if (incomingHash !== user.emailVerificationToken) {
+        throw new AppError("Invalid verification code", 400, "INVALID_OTP");
+    }
+
+    user.isEmailVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpires = undefined;
+    await user.save();
+
+    logger.info("Email verified", { userId: user._id, email: user.email });
+
+    return { message: "Email verified successfully. You can now log in." };
+};
+
+export const resendVerificationOtp = async ({ email }) => {
+    if (!email) {
+        throw new AppError("Email is required", 400, "VALIDATION_ERROR");
+    }
+
+    const GENERIC_MESSAGE = "If an unverified account exists for this email, a new code has been sent.";
+
+    const user = await User.findOne({ email }).select("+emailVerificationExpires");
+
+    // Don't reveal whether the account exists or is already verified
+    if (!user || user.isEmailVerified) {
+        return { message: GENERIC_MESSAGE };
+    }
+
+    if (user.emailVerificationExpires) {
+        const issuedAt = user.emailVerificationExpires.getTime() - OTP_TTL_MS;
+        const elapsed = Date.now() - issuedAt;
+        if (elapsed < OTP_RESEND_COOLDOWN_MS) {
+            const waitSeconds = Math.ceil((OTP_RESEND_COOLDOWN_MS - elapsed) / 1000);
+            throw new AppError(`Please wait ${waitSeconds} second(s) before requesting another code.`, 429, "OTP_RESEND_COOLDOWN");
+        }
+    }
+
+    const otp = generateOtp();
+    const otpHash = hashToken(otp);
+
+    user.emailVerificationToken = otpHash;
+    user.emailVerificationExpires = new Date(Date.now() + OTP_TTL_MS);
+    await user.save();
+
+    try {
+        await sendVerificationOtpEmail(user.email, otp);
+    } catch (err) {
+        logger.error("Failed to send verification OTP email", { userId: user._id, error: err.message });
+    }
+
+    return { message: GENERIC_MESSAGE };
+};

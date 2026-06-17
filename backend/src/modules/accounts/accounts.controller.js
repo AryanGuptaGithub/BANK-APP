@@ -43,7 +43,7 @@ export const getAccountStatement = catchAsync(async (req, res) => {
         req.params.id,
         req.user.id,
         req.user.role,
-        req.query
+        req.validatedQuery 
     );
     return sendSuccess(res, {
         message: "Statement retrieved successfully",

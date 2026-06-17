@@ -16,7 +16,7 @@ const accountSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
             required: [true, "User ID is required"],
-            index: true,
+          
         },
 
         // ─── Account Identity ──────────────────────────────────────────
@@ -24,6 +24,7 @@ const accountSchema = new mongoose.Schema(
             type: String,
             unique: true,
             default: generateAccountNumber,
+
         },
         accountType: {
             type: String,
@@ -110,7 +111,7 @@ accountSchema.methods.checkDailyLimit = function (amount) {
 
 // ─── Indexes ───────────────────────────────────────────────────────────────
 accountSchema.index({ userId: 1, status: 1 });
-accountSchema.index({ accountNumber: 1 });
+// accountSchema.index({ accountNumber: 1 });
 
 const Account = mongoose.model("Account", accountSchema);
 

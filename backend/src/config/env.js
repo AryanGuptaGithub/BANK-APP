@@ -1,3 +1,4 @@
+// env.js
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -26,7 +27,7 @@ if(process.env.ENCRYPTION_KEY.length !== 32){
 
 const config = {
     app:{
-        env: process.env.NODE_ENV || 'developement',
+        env: process.env.NODE_ENV || 'development',
         port: parseInt(process.env.PORT, 10) || 5000,
         name: process.env.APP_NAME || 'BankAPI',
         isDev: process.env.NODE_ENV === 'development',

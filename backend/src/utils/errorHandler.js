@@ -1,7 +1,7 @@
-import config from "../config/env";
-import logger from "../utils/logger";
-import {sendError} from "../utils/apiResponse";
-import AppError from '../utils/AppError';
+import config from "../config/env.js";
+import logger from "../utils/logger.js";
+import {sendError} from "../utils/apiResponse.js";
+import AppError from '../utils/AppError.js';
 
 
 const handleMongoErrors = (err) => {
@@ -39,7 +39,7 @@ const handleJWTErrors = (err) => {
 
 
 const errorHandler = (err, req, res, next) => {
-    let error = {...err, message: err.message };
+     let error = err; 
 
     error = handleMongoErrors(error);
     error = handleJWTErrors(error);
@@ -74,7 +74,7 @@ const errorHandler = (err, req, res, next) => {
 
 };
 
-modules.exports = errorHandler;
+export default errorHandler;
 
 
 

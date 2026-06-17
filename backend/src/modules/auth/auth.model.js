@@ -114,15 +114,13 @@ userSchema.virtual("isLocked").get(function(){
 });
 
 
-userSchema.pre("save", async function (next){
-    if(!this.isModified("password")) return next();
+userSchema.pre("save", async function () {
+    if (!this.isModified("password")) return;
     this.password = await bcrypt.hash(this.password, config.bcrypt.saltRounds);
 
-    if(!this.isNew){
+    if (!this.isNew) {
         this.passwordChangedAt = new Date(Date.now() - 1000);
     }
-
-    next();
 });
 
 
@@ -155,8 +153,8 @@ userSchema.methods.wasPasswordChangedAfter = function(jwtIssueAt){
     return false;
 };
 
-userSchema.index({email: 1});
-userSchema.index({ phone: 1});
+// userSchema.index({email: 1});
+// userSchema.index({ phone: 1});
 
 const User = mongoose.model("User", userSchema);
 

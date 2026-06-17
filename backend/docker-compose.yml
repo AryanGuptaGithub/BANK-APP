@@ -1,53 +1,66 @@
 version: '3.9'
 
-services: 
+services:
   api:
     build: .
     container_name: bank_api
     ports:
-      - '5000:5000'
+      - "5000:5000"
     env_file:
       - .env
+    environment:
+      - REDIS_URL=redis://redis:6379        # ✅ overrides .env value inside Docker
     volumes:
       - .:/app
       - /app/node_modules
     depends_on:
-      - mongo
-      - redis
+      mongo:
+        condition: service_healthy           # ✅ wait for mongo to be ready
+      redis:
+        condition: service_healthy           # ✅ wait for redis to be ready
     networks:
       - bank_network
     restart: unless-stopped
 
-    mongo: 
-      image: mongo:7.0
-      container_name: bank_mongo
-      ports:
-        - '27017 : 27017'
-      volumes:
-        - mongo_data:/data/db
-      networks:
-        - bank_network
-      restart: unless-stopped
+  mongo:
+    image: mongo:7.0
+    container_name: bank_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - bank_network
+    restart: unless-stopped
+    healthcheck:                             # ✅ added
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
-    redis:
+  redis:
     image: redis:7.2-alpine
     container_name: bank_redis
     ports:
-      - '6379:6379'
-    volumes: 
+      - "6379:6379"
+    volumes:
       - redis_data:/data
+    command: redis-server --appendonly yes
     networks:
       - bank_network
-    command: redis-server --appendonly yes
     restart: unless-stopped
+    healthcheck:                             # ✅ added
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
 
+volumes:
+  mongo_data:
+  redis_data:
 
-    volumes:
-    mongo_data:
-    redis_data:
-
-    network:
-    bank_network:
+networks:
+  bank_network:
     driver: bridge
-     
-

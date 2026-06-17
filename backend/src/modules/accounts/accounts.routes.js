@@ -8,18 +8,21 @@ import {
 } from "./accounts.validation.js";
 import { authenticate, authorize } from "../../middlewares/authenticate.js";
 
-const router = Router();
+const createAccountsRouter = () => {          // ✅ wrap in factory
+    const router = Router();
 
-// All accounts routes require authentication
-router.use(authenticate);
+    router.use(authenticate);
 
-// ─── Customer Routes ───────────────────────────────────────────────────────
-router.post("/", validate(createAccountSchema), accountsController.createAccount);
-router.get("/", accountsController.getUserAccounts);
-router.get("/:id", accountsController.getAccountById);
-router.get("/:id/statement", validate(statementQuerySchema, "query"), accountsController.getAccountStatement);
+    // ─── Customer Routes ───────────────────────────────────────────────
+    router.post("/", validate(createAccountSchema), accountsController.createAccount);
+    router.get("/", accountsController.getUserAccounts);
+    router.get("/:id", accountsController.getAccountById);
+    router.get("/:id/statement", validate(statementQuerySchema, "query"), accountsController.getAccountStatement);
 
-// ─── Admin Only Routes ─────────────────────────────────────────────────────
-router.patch("/:id/status", authorize("admin"), validate(updateStatusSchema), accountsController.updateAccountStatus);
+    // ─── Admin Only Routes ─────────────────────────────────────────────
+    router.patch("/:id/status", authorize("admin"), validate(updateStatusSchema), accountsController.updateAccountStatus);
 
-export default router;
+    return router;                            // ✅ must return
+};
+
+export default createAccountsRouter;          // ✅ export the function

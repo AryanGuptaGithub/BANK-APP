@@ -1,3 +1,4 @@
+// accounts.validation.js 
 import Joi from "joi";
 
 // ─── Create Account ────────────────────────────────────────────────────────
@@ -65,7 +66,7 @@ export const validate = (schema, source = "body") => {
         }
 
         // Attach validated value back to correct source
-        if (source === "query") req.query = value;
+       if (source === "query") req.validatedQuery = value;
         else req.body = value;
 
         next();
