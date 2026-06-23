@@ -16,9 +16,15 @@ import errorHandler from './middlewares/errorHandler.js';
 import { createGlobalLimiter } from "./middlewares/rateLimiter.js";
 import { sendSuccess, sendNotFound } from './utils/apiResponse.js';
 
+
 // ✅ Import router factories, not router instances
 import createAuthRouter from './modules/auth/auth.routes.js';
 import createAccountsRouter from './modules/accounts/accounts.routes.js';
+import createTransactionsRouter from './modules/transactions/transactions.routes.js';
+
+
+import createNotificationsRouter from './modules/notifications/notifications.routes.js';
+import createAdminRouter from './modules/admin/admin.routes.js';
 
 const app = express();
 
@@ -70,9 +76,15 @@ const startServer = async () => {
         await connectDB();
         await connectRedis();
 
+
+
         app.use("/api", createGlobalLimiter());
         app.use("/api/v1/auth", createAuthRouter());
         app.use("/api/v1/accounts", createAccountsRouter());
+        app.use("/api/v1/transactions", createTransactionsRouter());
+        app.use("/api/v1/notifications", createNotificationsRouter());
+        app.use("/api/v1/admin", createAdminRouter());
+
 
         app.use((req, res) => {
             sendNotFound(res, `Route ${req.method} ${req.originalUrl} not found`);

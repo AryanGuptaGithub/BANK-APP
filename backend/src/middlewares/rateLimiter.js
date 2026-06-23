@@ -1,4 +1,4 @@
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import { RedisStore } from "rate-limit-redis";
 import { getRedisClient } from "../config/redis.js";
 import config from "../config/env.js";
@@ -49,12 +49,11 @@ export const createAuthLimiter = () =>
         keyPrefix: "auth",
     });
 
-export const createTransactionLimiter = () =>
+export const createTransactionLimiter = () => 
     createLimiter({
         windowMs: 60 * 1000,
         max: 10,
-        message:
-            "Too many transaction requests. Please slow down.",
+        message: "Too many transaction requests. Please slow down.",
         keyPrefix: "txn",
-        keyGenerator: (req) => req.user?.id || req.ip,
+        keyGenerator: (req) => req.user?.id || ipKeyGenerator(req.ip),
     });

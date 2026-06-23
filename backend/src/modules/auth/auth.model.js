@@ -117,7 +117,6 @@ userSchema.virtual("isLocked").get(function(){
 userSchema.pre("save", async function () {
     if (!this.isModified("password")) return;
     this.password = await bcrypt.hash(this.password, config.bcrypt.saltRounds);
-
     if (!this.isNew) {
         this.passwordChangedAt = new Date(Date.now() - 1000);
     }
